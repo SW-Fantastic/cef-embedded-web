@@ -11,4 +11,8 @@ module embdCEF {
 
     opens org.swdc.cef.control to com.formdev.flatlaf;
 
+    exports org.swdc.cef;
+    exports org.swdc.cef.control;
+    exports org.swdc.cef.schema;
+
 }
