@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Modal</title>
+</head>
+    <body style="padding:0;margin:0">
+        <div style="display:flex;flex-direction: column;height:100vh;width:100%">
+            <div style="height:90%">
+                <div>This is a modal</div>
+            </div>
+            <div style="height:10%;display:flex;flex-direction:row;justify-content:flex-end;align-items:center;padding:12px 24px">
+                <button id="submit" style="padding:8px">确定</button>
+            </div>
+        </div>
+        <script type="module">
+
+            class CEFRequest {
+
+                constructor(params) {
+                    this.parameters = [];
+                    for(let idx = 0; idx < params.length; idx ++) {
+                        this.parameters[idx] = JSON.stringify(params[idx]);
+                    }
+                }
+
+                toJson() {
+                    return JSON.stringify(this);
+                }
+
+                doRequest(methodName) {
+                    return new Promise((resolve,reject) => {
+                        window["$" + methodName]({
+                            request: this.toJson(),
+                            onSuccess: res => resolve(res),
+                            onFailure: e => reject(e)
+                        })
+                    })
+                }
+            }
+
+            document.querySelector("#submit").onclick = () => {
+                let complete = new CEFRequest([
+                    "Model Complete is called."
+                ]);
+
+                complete.doRequest("complete");
+            }
+
+        </script>
+    </body>
+</html>

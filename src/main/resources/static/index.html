@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+    </head>
+    <body>
+        <h1>Hello world</h1>
+        <button id="openModal">打开Modal</button>
+        <script type="module">
+
+            class CEFRequest {
+
+            constructor(params) {
+                this.parameters = [];
+                for(let idx = 0; idx < params.length; idx ++) {
+                    this.parameters[idx] = JSON.stringify(params[idx]);
+                }
+            }
+
+            toJson() {
+                return JSON.stringify(this);
+            }
+
+            doRequest(methodName) {
+                return new Promise((resolve,reject) => {
+                    window["$" + methodName]({
+                            request: this.toJson(),
+                            onSuccess: res => resolve(res),
+                            onFailure: e => reject(e)
+                        })
+                    })
+                }
+            }
+
+            const params = [{
+                name: "打印",
+                scriptCallback: "print",
+                children: [{
+                    name: "打印PDF",
+                    scriptCallback: "printPDF",
+                    children: []
+                }, {
+                    name: "发送到打印机",
+                    scriptCallback: "printer",
+                    children: []
+                }]
+            }];
+
+            let request = new CEFRequest([
+                params
+            ]);
+
+            request.doRequest("setContextMenu")
+                .then(d => console.log(d));
+
+
+            // ------------- Menubar ------------------- //
+
+            let menuBarItems = [{
+                name: "文件",
+                scriptCallback: "menuFile",
+                children:[{
+                    name: "打开",
+                    scriptCallback: "menuFileOpen",
+                    children: []
+                }, {
+                    name: "另存为",
+                    scriptCallback: "menuFileSaveAs",
+                    children: []
+                }, {
+                    name: "退出",
+                    scriptCallback: "menuFileExit",
+                    children: []
+                }]
+            }, {
+                name: "关于",
+                scriptCallback:"menuAbout",
+                children: [{
+                    name: "关于本应用",
+                    scriptCallback: "menuAboutVersion"
+                }]
+            }]
+
+            let menuRequest = new CEFRequest([
+                menuBarItems
+            ]);
+
+            menuRequest.doRequest("setBarMenu")
+                .then(d => console.log(d));
+
+            document.querySelector("#openModal").onclick=() => {
+
+                let openRequest = new CEFRequest([
+                    "org.swdc.cef.test.ModalView",
+                    ""
+                ])
+                openRequest.doRequest("showViewModal").then(dt => {
+                    console.log(dt);
+                })
+            }
+        </script>
+    </body>
+</html>
