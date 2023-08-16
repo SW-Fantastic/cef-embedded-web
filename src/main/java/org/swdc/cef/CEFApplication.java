@@ -4,6 +4,7 @@ import me.friwi.jcefmaven.CefAppBuilder;
 import me.friwi.jcefmaven.MavenCefAppHandlerAdapter;
 import org.cef.CefApp;
 import org.cef.callback.CefSchemeRegistrar;
+import org.cef.network.CefCookieManager;
 import org.swdc.cef.schema.CEFResourceSchema;
 import org.swdc.cef.schema.CEFSchema;
 
@@ -24,7 +25,7 @@ public class CEFApplication {
     public CEFApplication(File assetFolder,String webResourcePrefix,Class caller) {
         this.assetFolder = assetFolder;
         this.caller = caller;
-        this.registerURLSchema(new CEFSchema("res",new CEFResourceSchema(webResourcePrefix,caller)));
+        this.registerURLSchema(new CEFResourceSchema(webResourcePrefix,caller));
     }
 
     public CEFApplication registerURLSchema(CEFSchema schema) {
@@ -59,8 +60,14 @@ public class CEFApplication {
                     schema.append(app);
                 }
             }
+
         });
         try {
+            File userData =  new File(assetFolder.getAbsolutePath() + File.separator + "cache");
+            if (!userData.exists()) {
+                userData.mkdirs();
+            }
+            builder.getCefSettings().cache_path = userData.getAbsolutePath();
             app = builder.build();
             return app;
         } catch (Exception e) {

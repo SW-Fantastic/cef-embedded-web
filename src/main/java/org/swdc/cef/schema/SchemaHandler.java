@@ -39,7 +39,7 @@ public abstract class SchemaHandler implements CefResourceHandler {
             response.setStatus(200);
             response.setMimeType(resource.getMimeType());
             response.setHeaderByName("Access-Control-Allow-Origin","*",true);
-            responseLength.set(resource.getInputStream().available());
+            responseLength.set(resource.getSize());
         } catch (Exception e){
             response.setError(CefLoadHandler.ErrorCode.ERR_FILE_NOT_FOUND);
         }
@@ -52,16 +52,17 @@ public abstract class SchemaHandler implements CefResourceHandler {
                 return false;
             }
             InputStream inputStream = resource.getInputStream();
-            int transfer = Math.min(bytesToRead, inputStream.available());
-            inputStream.read(dataOut,offset,transfer);
+            int transfer = Math.min(bytesToRead, (resource.getSize() - offset));
+            inputStream.read(dataOut,0,transfer);
             offset = offset + transfer;
-            bytesRead.set(offset);
-            if (inputStream.available() == 0) {
+            bytesRead.set(transfer);
+            if (resource.getSize() - offset <= 0) {
                 inputStream.close();
                 resource = null;
             }
             return true;
         } catch (Exception e) {
+            e.printStackTrace();
             try {
                 resource.getInputStream().close();
                 resource = null;

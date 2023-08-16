@@ -9,7 +9,7 @@ import java.awt.*;
 import java.lang.reflect.Method;
 import java.util.List;
 
-public class CEFView {
+public class CEFView implements CEFViewControl {
 
     private CEFWindow window;
 
@@ -17,16 +17,28 @@ public class CEFView {
 
     private CEFScriptMenuRouting menuHandler = new CEFScriptMenuRouting();
 
+    private boolean initialized;
+
     public CEFView() {
 
     }
 
-    void setup(String baseURI, CefClient client, CEFContext context) {
+    public void initialize(String baseURI, CefClient client, CEFContext context) {
+        if (initialized) {
+            return;
+        }
+
         CEFWebView location = this.getClass().getAnnotation(CEFWebView.class);
         if (location == null) {
             throw new RuntimeException("invalid location");
         }
-        window = new CEFWindow(client,baseURI + (location.location().isBlank() ? "" : ("/" + location.location())) );
+
+        String url = (baseURI == null || baseURI.isBlank()) ?
+                location.location() :
+                location.location().isBlank() ?
+                        baseURI : baseURI + "/" + location.location();
+
+        window = new CEFWindow(client,url );
         window.setMinimumSize(new Dimension(location.width(),location.height()));
         window.setResizable(location.resizeable());
         window.setTitle(location.title());
@@ -50,7 +62,7 @@ public class CEFView {
         }
 
         client.addContextMenuHandler(menuHandler);
-
+        initialized = true;
     }
 
     CEFWindow getWindow() {
@@ -101,7 +113,7 @@ public class CEFView {
         try {
             Class clazz = ClassLoader.getSystemClassLoader().loadClass(className);
             if (CEFView.class.isAssignableFrom(clazz)) {
-                CEFView view = context.getView(clazz);
+                CEFView view = (CEFView) context.getView(clazz);
                 view.show();
                 return CEFResult.success("OK");
             } else {
@@ -117,8 +129,8 @@ public class CEFView {
             Class clazz = ClassLoader.getSystemClassLoader().loadClass(className);
             if (CEFModal.class.isAssignableFrom(clazz)) {
                 CEFAsync result = new CEFAsync(dispatcher());
-                CEFModal view = context.createModal(this,clazz);
-                view.show(result,optionJson);
+                CEFModal view = (CEFModal) context.getView(clazz);
+                view.show(this,result,optionJson);
                 return result;
             }
             return CEFAsync.fail(context.dispatcher(),500,"class is not a modal view.");

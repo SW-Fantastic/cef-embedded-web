@@ -3,6 +3,7 @@ module embdCEF {
     requires java.desktop;
     requires jcefmaven;
     requires jcef;
+    requires jakarta.inject;
 
     requires com.fasterxml.jackson.core;
     requires com.fasterxml.jackson.databind;

@@ -22,7 +22,7 @@ import java.util.List;
  * @param <T> 如果Modal需要一些配置、选项之类的，这里是它的类型，
  *           不需要的话就直接写Void。
  */
-public class CEFModal<T>  {
+public class CEFModal<T>  implements CEFViewControl {
 
     private T theOptions;
 
@@ -31,28 +31,36 @@ public class CEFModal<T>  {
     private CEFResult result;
 
 
+    private CefClient client;
+
     private CEFModalWindow window;
 
     private CEFContext context;
 
     private CEFScriptMenuRouting menuHandler = new CEFScriptMenuRouting();
 
+    private String url;
+
+    private boolean isScriptModal;
+
+    private boolean initialized;
+
     public CEFModal() {
 
     }
 
-    void setup(CEFView view,String baseURI, CefClient client, CEFContext context) {
+    public void initialize(String baseURI, CefClient client, CEFContext context) {
+        if (initialized) {
+            return;
+        }
         CEFWebView location = this.getClass().getAnnotation(CEFWebView.class);
         if (location == null) {
             throw new RuntimeException("invalid location");
         }
-        window = new CEFModalWindow(view,client,baseURI + (location.location().isBlank() ? "" : ("/" + location.location())));
-        window.setMinimumSize(new Dimension(location.width(),location.height()));
-        window.setResizable(location.resizeable());
-        window.setTitle(location.title());
-        window.setLocationRelativeTo(null);
-        window.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        this.url = baseURI + (location.location().isBlank() ? "" : ("/" + location.location()));
+
         this.context = context;
+        this.client = client;
 
         java.util.List<Method> methods = CEFUtils.getScriptExport(this.getClass());
         for (Method m: methods) {
@@ -70,7 +78,7 @@ public class CEFModal<T>  {
         }
 
         client.addContextMenuHandler(menuHandler);
-
+        initialized = true;
     }
 
     CEFModalWindow getWindow() {
@@ -85,9 +93,42 @@ public class CEFModal<T>  {
         }
     }
 
-    public void show(CEFAsync callback, String jsonObject) {
+    public void show(CEFView parent) {
+        if (window != null && !isScriptModal) {
+            window.setVisible(true);
+            window.requestFocus();
+        } else {
+            CEFWebView location = this.getClass().getAnnotation(CEFWebView.class);
+            isScriptModal = false;
+            window = new CEFModalWindow(parent,client,url);
+            window.setMinimumSize(new Dimension(location.width(),location.height()));
+            window.setResizable(location.resizeable());
+            window.setTitle(location.title());
+            window.setLocationRelativeTo(null);
+            window.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+            window.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    close();
+                }
+            });
+            window.setVisible(true);
+        }
+    }
 
+    public void show(CEFView parent,CEFAsync callback, String jsonObject) {
+        isScriptModal = true;
         try {
+            CEFWebView location = this.getClass().getAnnotation(CEFWebView.class);
+            if (location == null) {
+                throw new RuntimeException("invalid location");
+            }
+            window = new CEFModalWindow(parent,client,url);
+            window.setMinimumSize(new Dimension(location.width(),location.height()));
+            window.setResizable(location.resizeable());
+            window.setTitle(location.title());
+            window.setLocationRelativeTo(null);
+            window.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
             ParameterizedType type = (ParameterizedType) getClass().getGenericSuperclass();
             Class jsonType = (Class) type.getActualTypeArguments()[0];
@@ -106,30 +147,32 @@ public class CEFModal<T>  {
             window.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosed(WindowEvent e) {
-                    callback.complete(result == null ? CEFResult.fail(404,"") : result);
+                    close();
                 }
             });
-            if (window.isVisible()) {
-                window.requestFocus();
-            } else {
-                window.setVisible(true);
-                CEFWebView location = this.getClass().getAnnotation(CEFWebView.class);
-                if (location.devTools()) {
-                    window.openDevTools();
-                }
+            window.setVisible(true);
+            if (location.devTools()) {
+                window.openDevTools();
             }
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     public void close() {
-        callback.complete(result == null ? CEFResult.fail(404,"") : result);
-        window.setVisible(false);
-        SwingUtilities.invokeLater(() -> {
-            window.dispose();
-        });
+        if (callback != null) {
+            callback.complete(result == null ? CEFResult.fail(404,"") : result);
+        }
+        if (window != null) {
+            window.setVisible(false);
+            SwingUtilities.invokeLater(() -> {
+                window.dispose();
+                window = null;
+                if (isScriptModal) {
+                    client.dispose();
+                }
+            });
+        }
     }
 
 
@@ -148,7 +191,7 @@ public class CEFModal<T>  {
         try {
             Class clazz = ClassLoader.getSystemClassLoader().loadClass(className);
             if (CEFView.class.isAssignableFrom(clazz)) {
-                CEFView view = context.getView(clazz);
+                CEFView view = (CEFView) context.getView(clazz);
                 view.show();
                 return CEFResult.success("OK");
             } else {
@@ -161,7 +204,6 @@ public class CEFModal<T>  {
 
 
     public CEFResult complete(T result) {
-
         this.result = CEFResult.success(result);
         this.close();
         return CEFResult.success("OK");

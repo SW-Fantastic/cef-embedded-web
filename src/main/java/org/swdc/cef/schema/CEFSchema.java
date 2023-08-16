@@ -28,11 +28,11 @@ public class CEFSchema {
         registrar.addCustomScheme(
                 this.name,
                 false,
-                false,
-                false,
-                false,
                 true,
-                false,
+                true,
+                true,
+                true,
+                true,
                 true
         );
     }

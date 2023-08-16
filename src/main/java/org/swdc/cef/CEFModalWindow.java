@@ -60,9 +60,7 @@ public class CEFModalWindow extends JDialog {
             super.dispose();
             return;
         }
-        CefClient client = this.browser.getClient();
         this.browser.doClose();
-        client.dispose();
         browser = null;
         super.dispose();
     }

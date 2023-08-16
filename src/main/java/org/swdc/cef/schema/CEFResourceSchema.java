@@ -16,7 +16,11 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CEFResourceSchema implements CefSchemeHandlerFactory {
+public class CEFResourceSchema extends CEFSchema {
+
+    public CEFResourceSchema(String prefix, Class caller) {
+        super("res", new CEFResourceSchemaFactory(prefix,caller));
+    }
 
     static class CEFJavaResourceHandler extends SchemaHandler {
 
@@ -48,7 +52,7 @@ public class CEFResourceSchema implements CefSchemeHandlerFactory {
                     return null;
                 }
 
-                return new SchemaResource(in,mime);
+                return new SchemaResource(in,mime,in.available());
             } catch (IOException e) {
                 return null;
             }
@@ -62,18 +66,24 @@ public class CEFResourceSchema implements CefSchemeHandlerFactory {
 
     }
 
-    private Class caller;
 
-    private String prefix;
+    public static class CEFResourceSchemaFactory implements CefSchemeHandlerFactory {
 
-    public CEFResourceSchema(String prefix, Class caller) {
-        this.caller = caller;
-        this.prefix = prefix;
+        private Class caller;
+
+        private String prefix;
+
+
+        public CEFResourceSchemaFactory(String prefix, Class caller) {
+            this.caller = caller;
+            this.prefix = prefix;
+        }
+        @Override
+        public CefResourceHandler create(CefBrowser browser, CefFrame frame, String schemeName, CefRequest request) {
+            return new CEFJavaResourceHandler(prefix,caller);
+        }
     }
 
-    @Override
-    public CefResourceHandler create(CefBrowser browser, CefFrame frame, String schemeName, CefRequest request) {
-        return new CEFJavaResourceHandler(prefix,caller);
-    }
+
 
 }

@@ -1,11 +1,13 @@
 package org.swdc.cef;
 
+import org.cef.CefClient;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class CEFWindowManager {
 
-    private List<CEFView> views = new ArrayList<>();
+    private List<CEFViewControl> views = new ArrayList<>();
 
     private String baseUri;
 
@@ -22,11 +24,16 @@ public class CEFWindowManager {
         this.context = context;
     }
 
-    public <T extends CEFView> T createView(Class<T> cefView) {
+
+    public void initialize(CEFViewControl view) {
+        view.initialize(baseUri,application.getInstance().createClient(),context);
+    }
+
+    public <T extends CEFViewControl> T createView(Class<T> cefView) {
         try {
             T view = cefView.getConstructor()
                     .newInstance();
-            view.setup(baseUri,application.getInstance().createClient(),context);
+            view.initialize(baseUri,application.getInstance().createClient(),context);
             views.add(view);
             return view;
         } catch (Exception e) {
@@ -34,15 +41,6 @@ public class CEFWindowManager {
         }
     }
 
-    public <T extends CEFModal> T createModal(CEFView view, Class<T> modal) {
-        try {
-            T theView = modal.getConstructor()
-                    .newInstance();
-            theView.setup(view,baseUri,application.getInstance().createClient(),context);
-            return theView;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+
 
 }
