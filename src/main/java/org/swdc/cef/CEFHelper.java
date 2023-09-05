@@ -36,7 +36,7 @@ public class CEFHelper {
 
 
     public static CefAppBuilder createBuilder(File assetFolder, Class caller) {
-        File dist = new File(assetFolder.getAbsolutePath() + File.separator + "CEF");
+        File dist = new File(assetFolder.getAbsolutePath() + File.separator + "platform" + File.separator + "CEF");
         try {
 
             String osName = System.getProperty("os.name").trim().toLowerCase();

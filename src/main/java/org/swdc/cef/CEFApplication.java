@@ -63,7 +63,10 @@ public class CEFApplication {
 
         });
         try {
-            File userData =  new File(assetFolder.getAbsolutePath() + File.separator + "cache");
+            File userData =  new File(
+                    assetFolder.getAbsolutePath() + File.separator +
+                            "platform" + File.separator + "cef_cache"
+            );
             if (!userData.exists()) {
                 userData.mkdirs();
             }
