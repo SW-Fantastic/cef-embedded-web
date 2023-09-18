@@ -38,13 +38,18 @@ public class CEFView implements CEFViewControl {
                 location.location().isBlank() ?
                         baseURI : baseURI + "/" + location.location();
 
+        this.context = context;
+        doInitialize(client,url,location.width(),location.height(),location.resizeable(),location.title());
+        initialized = true;
+    }
+
+    protected void doInitialize(CefClient client, String url,int width, int height,boolean resizeable,String title){
         window = new CEFWindow(client,url );
-        window.setMinimumSize(new Dimension(location.width(),location.height()));
-        window.setResizable(location.resizeable());
-        window.setTitle(location.title());
+        window.setMinimumSize(new Dimension(width,height));
+        window.setResizable(resizeable);
+        window.setTitle(title);
         window.setLocationRelativeTo(null);
 
-        this.context = context;
 
         List<Method> methods = CEFUtils.getScriptExport(this.getClass());
         for (Method m: methods) {
@@ -52,9 +57,9 @@ public class CEFView implements CEFViewControl {
                 continue;
             }
             CefMessageRouter router = CefMessageRouter.create(new CefMessageRouter
-                    .CefMessageRouterConfig(
+                            .CefMessageRouterConfig(
                             "$" + m.getName(),
-                    "$cancel" + m.getName()
+                            "$cancel" + m.getName()
                     ),
                     new CEFMethodRouting(context.dispatcher(),this,m)
             );
@@ -62,7 +67,6 @@ public class CEFView implements CEFViewControl {
         }
 
         client.addContextMenuHandler(menuHandler);
-        initialized = true;
     }
 
     CEFWindow getWindow() {

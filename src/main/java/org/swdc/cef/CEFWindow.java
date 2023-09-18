@@ -64,11 +64,11 @@ public class CEFWindow extends JFrame {
             super.dispose();
             return;
         }
+        super.dispose();
         CefClient client = this.browser.getClient();
         this.browser.doClose();
         client.dispose();
         browser = null;
-        super.dispose();
     }
 
 

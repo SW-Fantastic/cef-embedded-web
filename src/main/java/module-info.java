@@ -9,6 +9,7 @@ module embdCEF {
     requires com.fasterxml.jackson.databind;
 
     requires com.formdev.flatlaf;
+    requires com.google.gson;
 
     opens org.swdc.cef.control to com.formdev.flatlaf;
 
